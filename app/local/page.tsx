@@ -88,7 +88,7 @@ export default function LocalPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground/40" />
                   <Input
@@ -104,7 +104,7 @@ export default function LocalPage() {
                 <button
                   onClick={handleSearch}
                   disabled={isLoading}
-                  className="gradient-button text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
+                  className="gradient-button text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
                 >
                   {isLoading ? (
                     <>
@@ -149,8 +149,8 @@ export default function LocalPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-lg border border-white/10 overflow-hidden">
-                    <Table>
+                  <div className="rounded-lg border border-white/10 overflow-x-auto">
+                    <Table className="min-w-[640px]">
                       <TableHeader>
                         <TableRow className="border-white/10">
                           <TableHead className="w-24">Code</TableHead>

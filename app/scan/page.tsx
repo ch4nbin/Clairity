@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Navigation } from '@/components/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,9 +36,18 @@ export default function ScanPage() {
   const [localData, setLocalData] = useState<LocalRecyclingData | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
   const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [isVideoReady, setIsVideoReady] = useState(false)
+  const [isSecure, setIsSecure] = useState(true)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsSecure(window.isSecureContext)
+    }
+  }, [])
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -133,26 +142,67 @@ export default function ScanPage() {
     }
   }
 
+  const attachStreamToVideo = async (mediaStream: MediaStream) => {
+    if (!videoRef.current) return
+    const video = videoRef.current
+    video.muted = true
+    video.setAttribute('playsinline', 'true')
+    video.srcObject = mediaStream
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Camera timed out')), 4000)
+      const markReady = () => {
+        clearTimeout(timeout)
+        setIsVideoReady(true)
+        resolve()
+      }
+      const onPlaying = () => {
+        video.removeEventListener('playing', onPlaying)
+        markReady()
+      }
+      const onLoaded = () => {
+        video.removeEventListener('loadedmetadata', onLoaded)
+        video.play().catch(() => null)
+        if (video.videoWidth && video.videoHeight) {
+          markReady()
+        }
+      }
+      video.addEventListener('playing', onPlaying)
+      video.addEventListener('loadedmetadata', onLoaded)
+      if (video.readyState >= 2) {
+        video.play().catch(() => null)
+        if (video.videoWidth && video.videoHeight) {
+          markReady()
+        }
+      }
+    })
+    const track = mediaStream.getVideoTracks()[0]
+    if (!video.videoWidth || !video.videoHeight || !track || track.readyState !== 'live') {
+      throw new Error('Camera feed unavailable. Check permissions or try a different camera.')
+    }
+  }
+
   const handleOpenCamera = async () => {
+    setError(null)
+    setIsVideoReady(false)
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop())
+    }
+    if (!isSecure) {
+      setError('Camera requires a secure context (HTTPS). Please use a secure connection or upload a photo instead.')
+      return
+    }
     try {
-      const constraints = { video: { facingMode: { ideal: 'environment' } } }
-      let mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      const constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } }
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       setStream(mediaStream)
       setIsCameraOpen(true)
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        await videoRef.current.play().catch(() => null)
-      }
+      await attachStreamToVideo(mediaStream)
     } catch (err) {
-      // Try fallback to user-facing camera if environment fails
       try {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true })
         setStream(fallbackStream)
         setIsCameraOpen(true)
-        if (videoRef.current) {
-          videoRef.current.srcObject = fallbackStream
-          await videoRef.current.play().catch(() => null)
-        }
+        await attachStreamToVideo(fallbackStream)
       } catch (_fallbackErr) {
         setError('Could not access camera. Please check permissions or try a different browser.')
       }
@@ -164,6 +214,7 @@ export default function ScanPage() {
       stream.getTracks().forEach(track => track.stop())
     }
     setIsCameraOpen(false)
+    setIsVideoReady(false)
     setStream(null)
   }
 
@@ -179,6 +230,7 @@ export default function ScanPage() {
       canvas.height = video.videoHeight
       const ctx = canvas.getContext('2d')
       if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.drawImage(video, 0, 0)
         canvas.toBlob((blob) => {
           if (!blob) {
@@ -220,7 +272,7 @@ export default function ScanPage() {
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#1f2f2c] leading-tight mt-2">
                       Scan your item <span className="text-[#1d5c4d]">instantly</span>
                     </h1>
-                    <p className="text-base md:text-lg text-[#4a5a56] mt-3 whitespace-nowrap">
+                    <p className="text-base md:text-lg text-[#4a5a56] mt-3">
                       Upload a quick photo or use your camera. We&apos;ll tell you what the plastic is and how to recycle it in your area.
                     </p>
                   </div>
@@ -241,12 +293,20 @@ export default function ScanPage() {
                           <X className="h-5 w-5 text-slate-800" />
                         </button>
                       </div>
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full bg-slate-900/30 aspect-[4/3] object-cover"
-                      />
+                      <div className="relative">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full aspect-[4/3] object-cover bg-black/40"
+                        />
+                        {!isVideoReady && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-sm font-medium">
+                            Waiting for camera... allow access and ensure a camera is available.
+                          </div>
+                        )}
+                      </div>
                       <canvas ref={canvasRef} className="hidden" />
                       <div className="px-5 py-4 bg-white flex flex-col sm:flex-row items-center gap-3 justify-between border-t border-[#c7e6d6]">
                         <p className="text-sm text-[#4a5a56]">Hold steady in natural light for a clear capture.</p>
@@ -306,8 +366,10 @@ export default function ScanPage() {
                     <div className="space-y-5">
                       <label className="cursor-pointer block">
                         <input
+                          ref={fileInputRef}
                           type="file"
                           accept="image/*"
+                          capture="environment"
                           onChange={handleFileChange}
                           className="hidden"
                         />
@@ -333,6 +395,13 @@ export default function ScanPage() {
                         >
                           <Camera className="h-4 w-4" />
                           Open camera
+                        </button>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#c7e6d6] text-[#1d5c4d] font-semibold hover:bg-[#e6f2ea] transition-colors"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Take photo (native)
                         </button>
                         <p className="text-xs text-[#5c6a67]">Best in bright, natural light</p>
                       </div>
