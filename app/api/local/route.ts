@@ -80,6 +80,19 @@ const MOCK_MUNICIPALITIES: Record<string, MunicipalityData> = {
       { resinCode: 7, material: 'Other', accepted: false, notes: 'Not accepted' },
     ],
   },
+  '08544': {
+    zipcode: '08544',
+    municipality: 'Princeton, NJ',
+    rules: [
+      { resinCode: 1, material: 'PET', accepted: true, notes: 'Water and beverage bottles accepted; rinse and empty.' },
+      { resinCode: 2, material: 'HDPE', accepted: true, notes: 'Bottles and jugs with caps on are fine.' },
+      { resinCode: 3, material: 'PVC', accepted: false, notes: 'Not accepted in curbside; take to special waste if available.' },
+      { resinCode: 4, material: 'LDPE', accepted: false, notes: 'Film and bags are store drop-off only.' },
+      { resinCode: 5, material: 'PP', accepted: true, notes: 'Rigid containers and cups accepted.' },
+      { resinCode: 6, material: 'PS', accepted: false, notes: 'Styrofoam is not accepted; avoid or take to specialty drop-offs.' },
+      { resinCode: 7, material: 'Other', accepted: false, notes: 'Not accepted in curbside program.' },
+    ],
+  },
 }
 
 export async function GET(request: NextRequest) {

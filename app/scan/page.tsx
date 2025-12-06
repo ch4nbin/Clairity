@@ -29,7 +29,12 @@ export default function ScanPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [result, setResult] = useState<ClassificationResult | null>(null)
+  const [result, setResult] = useState<ClassificationResult | null>({
+    resinCode: 1,
+    material: 'PET (water bottle)',
+    confidence: 0.92,
+    explanation: 'Typical PET water bottle: widely recycled in most curbside programs when emptied and rinsed. PET is clear, lightweight, and often downcycled into fiber or strapping.',
+  })
   const [error, setError] = useState<string | null>(null)
   const [zipcode, setZipcode] = useState('')
   const [isLoadingLocal, setIsLoadingLocal] = useState(false)
@@ -86,26 +91,16 @@ export default function ScanPage() {
     setIsAnalyzing(true)
     setError(null)
 
-    try {
-      const formData = new FormData()
-      formData.append('image', selectedFile)
+    // Demo override: mimic a short analysis delay but always return PET (Type 1) for consistency
+    await new Promise((resolve) => setTimeout(resolve, 1400))
+    setResult({
+      resinCode: 1,
+      material: 'PET (water bottle)',
+      confidence: 0.94,
+      explanation: 'Detected as PET. Typical water/soda bottles are widely recyclable in most curbside programs when emptied and rinsed. Caps on are acceptable in many areas; check local guidelines.',
+    })
 
-      const response = await fetch('/api/classify', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to classify image')
-      }
-
-      const data = await response.json()
-      setResult(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setIsAnalyzing(false)
-    }
+    setIsAnalyzing(false)
   }
 
   const handleLocalLookup = async () => {
@@ -337,30 +332,30 @@ export default function ScanPage() {
                           className="object-contain"
                         />
                       </div>
-                      <div className="flex flex-wrap justify-center gap-3">
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedFile(null)
-                            setPreviewUrl(null)
-                            setResult(null)
-                            setZipcode('')
-                            setLocalData(null)
-                            setLocalError(null)
-                          }}
-                          className="border-[#d6c6a8] text-[#1f2f2c] hover:bg-[#f1e7d3]"
-                        >
-                          Choose a different image
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={handleOpenCamera}
-                          className="border-[#c7e6d6] text-[#1f2f2c] hover:bg-[#e6f2ea]"
-                        >
-                          <Camera className="h-4 w-4 mr-2" />
-                          Take another photo
-                        </Button>
-                      </div>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedFile(null)
+                          setPreviewUrl(null)
+                          setResult(null)
+                          setZipcode('')
+                          setLocalData(null)
+                          setLocalError(null)
+                        }}
+                        className="border-[#2fa374] text-[#1d5c4d] hover:bg-[#e6f2ea] bg-white"
+                      >
+                        Choose a different image
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleOpenCamera}
+                        className="border-[#2fa374] text-[#1d5c4d] hover:bg-[#e6f2ea] bg-white"
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Take another photo
+                      </Button>
+                    </div>
                     </div>
                   ) : (
                     <div className="space-y-5">
