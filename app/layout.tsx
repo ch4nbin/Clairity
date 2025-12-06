@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Space_Grotesk, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700'] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -36,8 +36,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
-        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-background via-background to-emerald-950/20" />
+      <body className={`${spaceGrotesk.className} antialiased`}>
+        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-background via-[#f3fbf5] to-[#e3f0e9]" />
         {children}
         <Analytics />
       </body>
