@@ -29,12 +29,7 @@ export default function ScanPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [result, setResult] = useState<ClassificationResult | null>({
-    resinCode: 1,
-    material: 'PET (water bottle)',
-    confidence: 0.92,
-    explanation: 'Typical PET water bottle: widely recycled in most curbside programs when emptied and rinsed. PET is clear, lightweight, and often downcycled into fiber or strapping.',
-  })
+  const [result, setResult] = useState<ClassificationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [zipcode, setZipcode] = useState('')
   const [isLoadingLocal, setIsLoadingLocal] = useState(false)
